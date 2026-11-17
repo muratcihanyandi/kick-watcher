@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kick-watcher</title>
+<style>
+  :root {
+    --bg: #0c0e0c;
+    --surface: #141714;
+    --surface-2: #1a1e1a;
+    --border: #262b26;
+    --text: #e8ece8;
+    --muted: #8a938a;
+    --green: #53fc18;
+    --green-dim: #53fc1826;
+    --red: #ff5d5d;
+    --amber: #ffc753;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 24px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+  header h1 .dot { color: var(--green); }
+  header .sub { color: var(--muted); font-size: 12px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 10px; }
+  textarea {
+    width: 100%; min-height: 84px; resize: vertical;
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-family: ui-monospace, Consolas, monospace; font-size: 12px;
+  }
+  textarea:focus, input:focus { outline: 1px solid var(--green); }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  input[type=text] {
+    flex: 1; background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px;
+  }
+  button {
+    background: var(--green); color: #0a0f05; border: none; border-radius: 8px;
+    padding: 8px 16px; font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+  button:hover { filter: brightness(1.1); }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); font-weight: 500; }
+  button.ghost:hover { color: var(--text); }
+  .hint { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .hint b { color: var(--text); font-weight: 600; }
+
+  .acc { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+  .acc + .acc { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
+  .acc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); object-fit: cover; }
+  .avatar.ph { display: flex; align-items: center; justify-content: center; color: var(--muted); font-weight: 700; }
+  .uname { font-weight: 700; font-size: 15px; }
+  .badge {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px;
+    background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
+  }
+  .badge.live { color: var(--green); background: var(--green-dim); border-color: transparent; }
+  .badge.err { color: var(--red); background: #ff5d5d1a; border-color: transparent; }
+  .badge.warn { color: var(--amber); background: #ffc7531a; border-color: transparent; }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .meta b { color: var(--text); font-weight: 600; }
+  .actions { display: flex; gap: 6px; align-items: flex-start; }
+  .actions button { padding: 5px 10px; font-size: 12px; }
+  .bar { height: 6px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .bar i { display: block; height: 100%; background: var(--green); border-radius: 4px; }
+  .reward { margin-top: 8px; font-size: 12px; }
+  .reward .rname { display: flex; justify-content: space-between; }
+  .reward .rname span:last-child { color: var(--muted); }
+  .reward.claimed .rname span:first-child { color: var(--green); }
+  .claim {
+    margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: 12px;
+    background: var(--green-dim); color: var(--green); font-weight: 600;
+  }
+  .claim.fail { background: #ff5d5d1a; color: var(--red); }
+  .gta-tag { color: var(--amber); font-weight: 700; }
+  .empty { color: var(--muted); text-align: center; padding: 18px; font-size: 13px; }
+  #logs { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; color: var(--muted); max-height: 180px; overflow-y: auto; }
+  #logs div { padding: 1px 0; }
+  #logs .t { color: #5a635a; }
+  @media (max-width: 640px) { body { padding: 14px; } .acc { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>kick-watcher<span class="dot">.</span></h1>
+  <span class="sub">çoklu hesap izleyici + otomatik kutu açıcı</span>
+</header>
+
+<div class="card">
+  <h2>Hesap ekle</h2>
+  <textarea id="cookie" placeholder="Cookie satırı VEYA cookies.txt (Netscape formatı) içeriğini buraya yapıştır — ikisi de olur"></textarea>
+  <div class="row">
+    <input type="text" id="label" placeholder="Etiket (opsiyonel, örn. 'hesap 3')">
+    <button id="add">Ekle &amp; İzlemeye Başla</button>
+  </div>
+  <div class="hint"><b>Kolay yol:</b> Aşağıdaki hesap kartındaki <b>Giriş Yap</b> butonu, o hesap için izole bir Brave penceresi açar — pencerede giriş yapınca cookie otomatik yakalanır, elle kopyalamana gerek yok. Elle yapmak istersen: gizli pencerede kick.com'a gir, F12 → Network → bir istek → Request Headers → <b>Cookie</b> satırını komple kopyala, buraya yapıştır (çıkış yapmadan pencereyi kapat).</div>
+</div>
+
+<div class="card">
+  <h2>Tüm hesapları bir kanala yönlendir</h2>
+  <div class="row" style="margin-top:0">
+    <input type="text" id="force" placeholder="https://kick.com/yayinci — link veya kullanıcı adı yapıştır">
+    <button id="forceBtn">Hepsini Oraya Gönder</button>
+    <button class="ghost" id="followBtn" onclick="followAll()">Takip Et</button>
+    <button class="ghost" id="unforceBtn">Kaldır</button>
+  </div>
+  <div class="hint" id="forceInfo"></div>
+</div>
+
+<div class="card">
+  <h2>Hesaplar</h2>
+  <div id="accounts"><div class="empty">Henüz hesap yok.</div></div>
+</div>
+
+<div class="card">
+  <h2>Loglar</h2>
+  <div id="logs"></div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function statusBadge(a) {
+  if (a.status === 'auth_error') return '<span class="badge err">oturum ölü</span>';
+  if (a.status === 'error') return '<span class="badge err">hata</span>';
+  if (a.status === 'watching' && a.wsStatus === 'izliyor') return '<span class="badge live">● izliyor</span>';
+  if (a.status === 'starting') return '<span class="badge">başlıyor…</span>';
+  if (a.status === 'stopped') return '<span class="badge">durduruldu</span>';
+  return '<span class="badge warn">' + esc(a.status) + '</span>';
+}
+
+function fmtMin(m) {
+  if (m == null) return '0';
+  const h = Math.floor(m / 60);
+  return h > 0 ? `${h}s ${m % 60}dk` : `${m}dk`;
+}
+
+function renderAccounts(accounts) {
+  const el = $('#accounts');
+  if (!accounts.length) { el.innerHTML = '<div class="empty">Henüz hesap yok.</div>'; return; }
+  el.innerHTML = accounts.map((a) => {
+    const rewards = (a.rewards ?? []).map((r) => {
+      const label = r.isGta ? `<span class="gta-tag">🎁 ${esc(r.name || 'kutu')}</span>` : esc(r.name || 'ödül');
+      if (r.claimed || (r.claims ?? []).length) {
+        return `<div class="reward claimed"><div class="rname"><span>${label} — alındı ✓</span></div></div>`;
+      }
+      return `<div class="reward"><div class="rname"><span>${label}</span><span>${fmtMin(r.minutes)} / ${fmtMin(r.requiredMinutes)}</span></div>
+        <div class="bar"><i style="width:${r.pct ?? 0}%"></i></div></div>`;
+    }).join('');
+    const lastClaim = (a.claims ?? [])[0];
+    const claimHtml = lastClaim
+      ? `<div class="claim${lastClaim.ok ? '' : ' fail'}">${lastClaim.ok ? '🎁 Kutu açıldı: ' : '⚠️ '}${esc(lastClaim.name)} — ${esc(lastClaim.detail)} (${new Date(lastClaim.at).toLocaleTimeString('tr-TR')})</div>`
+      : '';
+    const initial = (a.username ?? '?')[0].toUpperCase();
+    const avatar = a.avatar
+      ? `<img class="avatar" src="https://files.kick.com${esc(a.avatar.startsWith('/') ? a.avatar : '/' + a.avatar)}" onerror="this.outerHTML='<div class=\\'avatar ph\\'>${esc(initial)}</div>'">`
+      : `<div class="avatar ph">${esc(initial)}</div>`;
+    return `<div class="acc">
+      <div>
+        <div class="acc-head">
+          ${avatar}
+          <div>
+            <div class="uname">${esc(a.username ?? a.label ?? a.id.slice(0, 10))} ${statusBadge(a)}</div>
+            <div class="meta">
+              ${a.channel ? `▶ <b>${esc(a.channel)}</b> — ${esc(a.channelTitle ?? '')} · ` : ''}
+              izlenen: <b>${fmtMin(a.minutesWatched)}</b> · ${esc(a.watchSource ?? 'kanal seçiliyor…')} · ws: ${esc(a.wsStatus ?? '—')}
+            </div>
+          </div>
+        </div>
+        ${a.error ? `<div class="meta" style="color:var(--red)">⚠ ${esc(a.error)}</div>` : ''}
+        ${a.status === 'auth_error' ? `<div class="meta">Yukarıdaki kutuya yeni cookie'yi yapıştırıp <button class="ghost" onclick="updateCookie('${a.id}')">Cookie Güncelle</button> de.</div>` : ''}
+        ${rewards}
+        ${claimHtml}
+      </div>
+      <div class="actions">
+        <button onclick="login('${a.id}')" title="İzole Brave penceresinde bu hesaba giriş yap">Giriş Yap</button>
+        <button class="ghost" onclick="api('/api/accounts/${a.id}/check',{method:'POST'})">Kontrol</button>
+        ${a.running
+          ? `<button class="ghost" onclick="api('/api/accounts/${a.id}/stop',{method:'POST'})">Durdur</button>`
+          : `<button class="ghost" onclick="api('/api/accounts/${a.id}/start',{method:'POST'})">Başlat</button>`}
+        <button class="ghost" onclick="del('${a.id}')">Sil</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function api(url, opts) { await fetch(url, opts); refresh(); }
+async function login(id) {
+  const r = await fetch('/api/accounts/' + id + '/login', { method: 'POST' });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return alert(j.error ?? 'hata');
+  refresh();
+}
+async function setForce(on) {
+  const val = on ? $('#force').value.trim() : '';
+  if (on && !val) return alert('Kanal linki veya kullanıcı adı gir.');
+  const r = await fetch('/api/force', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ channel: val }),
+  });
+  const j = await r.json();
+  if (!r.ok) return alert(j.error ?? 'hata');
+  if (on) $('#force').value = '';
+  refresh();
+}
+$('#forceBtn').onclick = () => setForce(true);
+$('#unforceBtn').onclick = () => setForce(false);
+async function followAll() {
+  const r = await fetch('/api/follow', { method: 'POST' });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return alert(j.error ?? 'hata');
+  const okN = (j.results ?? []).filter((x) => x.ok).length;
+  alert(`"${j.slug}" takip sonucu: ${okN}/${j.results.length} hesap takip etti.\n` +
+    (j.results ?? []).map((x) => `${x.ok ? '✓' : '✗'} ${x.username}: ${x.note}`).join('\n'));
+  refresh();
+}
+async function updateCookie(id) {
+  const cookie = $('#cookie').value.trim();
+  if (!cookie.includes('kick_session=')) return alert("Önce yukarıdaki kutuya yeni cookie satırını yapıştır.");
+  await fetch('/api/accounts/' + id + '/cookie', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie }),
+  });
+  $('#cookie').value = '';
+  refresh();
+}
+async function del(id) {
+  if (!confirm('Hesap silinsin mi?')) return;
+  await fetch('/api/accounts/' + id, { method: 'DELETE' });
+  refresh();
+}
+
+$('#add').onclick = async () => {
+  const cookie = $('#cookie').value.trim();
+  if (!cookie) return alert('Cookie satırını yapıştır.');
+  const r = await fetch('/api/accounts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cookie, label: $('#label').value }),
+  });
+  const j = await r.json();
+  if (!r.ok) return alert(j.error ?? 'hata');
+  $('#cookie').value = ''; $('#label').value = '';
+  refresh();
+};
+
+let first = true;
+async function refresh() {
+  const r = await fetch('/api/state');
+  const j = await r.json();
+  $('#forceInfo').innerHTML = j.forceChannel
+    ? '🎯 Tüm hesaplar şu an <b>' + esc(j.forceChannel) + '</b> izliyor. Kaldırmak için "Kaldır" de.'
+    : 'Boşsa her hesap rastgele canlı yayın izler.';
+  renderAccounts(j.accounts);
+  $('#logs').innerHTML = j.logs.map((l) =>
+    `<div><span class="t">${new Date(l.at).toLocaleTimeString('tr-TR')}</span> ${esc(l.msg)}</div>`).join('') || '<div>—</div>';
+  if (first) first = false;
+}
+refresh();
+setInterval(refresh, 4000);
+</script>
+</body>
+</html>

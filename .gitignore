@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Local data — contains session cookies, NEVER commit
+data/
+login-profiles/
+
+# Secrets / captures
+*.cookie
+*.cookie.txt
+*cookie*.txt
+cookies*.txt
+.env
+
+# Logs
+*.log
+
+# OS junk
+Thumbs.db
+.DS_Store
