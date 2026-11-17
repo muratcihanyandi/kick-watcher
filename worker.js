@@ -13,6 +13,9 @@ const PROGRESS_EVERY_MS = 5 * 60_000;
 const CAMPAIGNS_EVERY_MS = 15 * 60_000;
 const MAX_RECONNECT = 6;
 const UA_CANDIDATES = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
@@ -88,7 +91,7 @@ export class AccountWorker {
       if (user) { this.ua = ua; this.set({ ua }); break; }
     }
     if (!user) {
-      this.set({ status: 'auth_error', wsStatus: '—', error: 'Oturum geçersiz (kick_session ölmüş olabilir). Yeni cookie ekle.' });
+      this.set({ status: 'auth_error', wsStatus: '—', error: 'Oturum geçersiz. Sebep olabilir: ① cookie alınan pencerede çıkış yapıldı/oturum yenilendi, ② tarayıcı versiyonu eşleşmedi. Çözüm: bu kartın "Giriş Yap" butonuyla izole Brave penceresinde giriş yap (en garanti), ya da cookie\'yi gizli pencereden alıp çıkış yapmadan kapat ve "Cookie Güncelle" de.' });
       return;
     }
     this.set({ status: 'active', username: user.username, userId: user.id, avatar: user.avatar, error: null });
